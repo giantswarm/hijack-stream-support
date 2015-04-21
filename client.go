@@ -11,30 +11,52 @@ import (
 	neturl "net/url"
 )
 
+type HijackHttpOptions struct {
+	Method             string
+	Url                string
+	Success            chan struct{}
+	DockerTermProtocol bool
+	InputStream        io.Reader
+	ErrorStream        io.Writer
+	OutputStream       io.Writer
+	Data               interface{}
+	Header             http.Header
+}
+
 // HijackHttpRequest performs an HTTP  request with given method, url and data and hijacks the request (after a successful connection) to stream
 // data from/to the given input, output and error streams.
-func HijackHttpRequest(method, url string, success chan struct{}, dockerTermProtocol bool, in io.Reader, stderr, stdout io.Writer, data interface{}) error {
+func HijackHttpRequest(options HijackHttpOptions) error {
 	var params io.Reader
-	if data != nil {
-		buf, err := json.Marshal(data)
+	if options.Data != nil {
+		buf, err := json.Marshal(options.Data)
 		if err != nil {
 			return err
 		}
 		params = bytes.NewBuffer(buf)
 	}
 
+	stdout := options.OutputStream
 	if stdout == nil {
 		stdout = ioutil.Discard
 	}
+	stderr := options.ErrorStream
 	if stderr == nil {
 		stderr = ioutil.Discard
 	}
-	req, err := http.NewRequest(method, url, params)
+	req, err := http.NewRequest(options.Method, options.Url, params)
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "plain/text")
-	ep, err := neturl.Parse(url)
+	if options.Header != nil {
+		for k, values := range options.Header {
+			req.Header.Del(k)
+			for _, v := range values {
+				req.Header.Set(k, v)
+			}
+		}
+	}
+	ep, err := neturl.Parse(options.Url)
 	if err != nil {
 		return err
 	}
@@ -52,6 +74,7 @@ func HijackHttpRequest(method, url string, success chan struct{}, dockerTermProt
 	clientconn := httputil.NewClientConn(dial, nil)
 	defer clientconn.Close()
 	clientconn.Do(req)
+	success := options.Success
 	if success != nil {
 		success <- struct{}{}
 		<-success
@@ -63,7 +86,7 @@ func HijackHttpRequest(method, url string, success chan struct{}, dockerTermProt
 	go func() {
 		defer close(exit)
 		var err error
-		if !dockerTermProtocol {
+		if !options.DockerTermProtocol {
 			// When TTY is ON, use regular copy
 			_, err = io.Copy(stdout, br)
 		} else {
@@ -73,6 +96,7 @@ func HijackHttpRequest(method, url string, success chan struct{}, dockerTermProt
 	}()
 	go func() {
 		var err error
+		in := options.InputStream
 		if in != nil {
 			_, err = io.Copy(rwc, in)
 		}
