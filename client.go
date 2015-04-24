@@ -47,7 +47,6 @@ func HijackHttpRequest(options HijackHttpOptions) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Content-Type", "plain/text")
 	if options.Header != nil {
 		for k, values := range options.Header {
 			req.Header.Del(k)
@@ -56,33 +55,43 @@ func HijackHttpRequest(options HijackHttpOptions) error {
 			}
 		}
 	}
+	req.Header.Set("Content-Type", "text/plain")
+	req.Header.Set("Connection", "Upgrade")
+	req.Header.Set("Upgrade", "tcp")
+
 	ep, err := neturl.Parse(options.Url)
 	if err != nil {
 		return err
 	}
+
 	protocol := ep.Scheme
 	address := ep.Path
 	if protocol != "unix" {
 		protocol = "tcp"
 		address = ep.Host
 	}
+
 	var dial net.Conn
 	dial, err = net.Dial(protocol, address)
 	if err != nil {
 		return err
 	}
+
 	clientconn := httputil.NewClientConn(dial, nil)
 	defer clientconn.Close()
+
 	clientconn.Do(req)
 	success := options.Success
 	if success != nil {
 		success <- struct{}{}
 		<-success
 	}
+
 	rwc, br := clientconn.Hijack()
 	defer rwc.Close()
 	errs := make(chan error, 2)
 	exit := make(chan bool)
+
 	go func() {
 		defer close(exit)
 		var err error
