@@ -21,6 +21,7 @@ type HijackHttpOptions struct {
 	OutputStream       io.Writer
 	Data               interface{}
 	Header             http.Header
+	Log                Logger
 }
 
 // HijackHttpRequest performs an HTTP  request with given method, url and data and hijacks the request (after a successful connection) to stream
@@ -120,7 +121,7 @@ func streamData(rwc io.Writer, br io.Reader, options HijackHttpOptions) error {
 			// When TTY is ON, use regular copy
 			_, err = io.Copy(stdout, br)
 		} else {
-			_, err = dockerCopy(stdout, stderr, br)
+			_, err = StdCopy(stdout, stderr, br, options.Log)
 		}
 		errs <- err
 	}()
