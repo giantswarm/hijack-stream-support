@@ -122,12 +122,13 @@ func createHijackHttpRequest(options HijackHttpOptions) (*http.Request, error) {
 
 // streamData copies both input/output/error streams to/from the hijacked streams
 func streamData(rwc io.Writer, br io.Reader, options HijackHttpOptions) error {
-	errs := make(chan error, 2)
-	defer close(errs)
+	errsIn := make(chan error, 1)
+	errsOut := make(chan error, 1)
 	exit := make(chan bool)
 
 	go func() {
 		defer close(exit)
+		defer close(errsOut)
 		var err error
 		stdout := options.OutputStream
 		if stdout == nil {
@@ -143,9 +144,10 @@ func streamData(rwc io.Writer, br io.Reader, options HijackHttpOptions) error {
 		} else {
 			_, err = docker.StdCopy(stdout, stderr, br, options.Log)
 		}
-		errs <- err
+		errsOut <- err
 	}()
 	go func() {
+		defer close(errsIn)
 		var err error
 		in := options.InputStream
 		if in != nil {
@@ -154,10 +156,15 @@ func streamData(rwc io.Writer, br io.Reader, options HijackHttpOptions) error {
 		if err := rwc.(closeWriter).CloseWrite(); err != nil {
 			options.Log.Debugf("CloseWrite failed %#v", err)
 		}
-		errs <- err
+		errsIn <- err
 	}()
 	<-exit
-	return <-errs
+	select {
+	case err := <-errsOut:
+		return err
+	case err := <-errsIn:
+		return err
+	}
 }
 
 // ----------------------------------------------
