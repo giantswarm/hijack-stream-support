@@ -43,3 +43,7 @@ if _, ok := req.Header["Upgrade"]; ok {
 }
 // Stream data from/to inStream/outStream
 ```
+
+## License
+
+Apache 2.0, see LICENSE
