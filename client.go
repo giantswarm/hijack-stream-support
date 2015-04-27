@@ -3,6 +3,7 @@ package support
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net"
@@ -26,12 +27,23 @@ type HijackHttpOptions struct {
 	Log                docker.Logger
 }
 
+var (
+	ErrMissingMethod = errors.New("Method not set")
+	ErrMissingUrl    = errors.New("Url not set")
+)
+
 // HijackHttpRequest performs an HTTP  request with given method, url and data and hijacks the request (after a successful connection) to stream
 // data from/to the given input, output and error streams.
 func HijackHttpRequest(options HijackHttpOptions) error {
 	if options.Log == nil {
 		// Make sure there is always a logger
 		options.Log = &logIgnore{}
+	}
+	if options.Method == "" {
+		return ErrMissingMethod
+	}
+	if options.Url == "" {
+		return ErrMissingUrl
 	}
 
 	req, err := createHijackHttpRequest(options)
