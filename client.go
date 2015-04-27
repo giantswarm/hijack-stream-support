@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	neturl "net/url"
+	"strings"
 
 	docker "github.com/giantswarm/hijack-stream-support/docker"
 )
@@ -61,6 +62,13 @@ func HijackHttpRequest(options HijackHttpOptions) error {
 	if protocol != "unix" {
 		protocol = "tcp"
 		address = ep.Host
+		if !strings.Contains(address, ":") {
+			if ep.Scheme == "https" {
+				address = address + ":443"
+			} else {
+				address = address + ":80"
+			}
+		}
 	}
 
 	// Dial the server
