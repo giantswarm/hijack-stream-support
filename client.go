@@ -123,6 +123,7 @@ func createHijackHttpRequest(options HijackHttpOptions) (*http.Request, error) {
 // streamData copies both input/output/error streams to/from the hijacked streams
 func streamData(rwc io.Writer, br io.Reader, options HijackHttpOptions) error {
 	errs := make(chan error, 2)
+	defer close(errs)
 	exit := make(chan bool)
 
 	go func() {
