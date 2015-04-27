@@ -2,8 +2,10 @@ package support
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
@@ -73,9 +75,20 @@ func HijackHttpRequest(options HijackHttpOptions) error {
 
 	// Dial the server
 	var dial net.Conn
-	dial, err = net.Dial(protocol, address)
-	if err != nil {
-		return err
+	fmt.Printf("Dialing %s %s\n", protocol, address)
+	if protocol == "https" {
+		config := &tls.Config{}
+		dial, err = docker.TLSDial(protocol, address, config)
+		if err != nil {
+			fmt.Printf("TLS Dialing %s %s failed %#v\n", protocol, address, err)
+			return err
+		}
+	} else {
+		dial, err = net.Dial(protocol, address)
+		if err != nil {
+			fmt.Printf("Dialing %s %s failed %#v\n", protocol, address, err)
+			return err
+		}
 	}
 
 	// Start initial HTTP connection
