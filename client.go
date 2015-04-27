@@ -138,14 +138,24 @@ func streamData(rwc io.Writer, br io.Reader, options HijackHttpOptions) error {
 		if in != nil {
 			_, err = io.Copy(rwc, in)
 		}
-		rwc.(interface {
-			CloseWrite() error
-		}).CloseWrite()
+		if err := rwc.(closeWriter).CloseWrite(); err != nil {
+			options.Log.Debugf("CloseWrite failed %#v", err)
+		}
 		errs <- err
 	}()
 	<-exit
 	return <-errs
 }
+
+// ----------------------------------------------
+// private interface supporting CloseWrite calls.
+
+type closeWriter interface {
+	CloseWrite() error
+}
+
+// ----------------------------------------------
+// Helper to ignore debug los in case we got no logger
 
 type logIgnore struct {
 }

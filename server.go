@@ -17,9 +17,7 @@ func HijackServer(w http.ResponseWriter) (io.ReadCloser, io.Writer, error) {
 
 func CloseStreams(streams ...interface{}) {
 	for _, stream := range streams {
-		if tcpc, ok := stream.(interface {
-			CloseWrite() error
-		}); ok {
+		if tcpc, ok := stream.(closeWriter); ok {
 			tcpc.CloseWrite()
 		} else if closer, ok := stream.(io.Closer); ok {
 			closer.Close()
