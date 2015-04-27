@@ -27,6 +27,11 @@ type HijackHttpOptions struct {
 // HijackHttpRequest performs an HTTP  request with given method, url and data and hijacks the request (after a successful connection) to stream
 // data from/to the given input, output and error streams.
 func HijackHttpRequest(options HijackHttpOptions) error {
+	if options.Log == nil {
+		// Make sure there is always a logger
+		options.Log = &logIgnore{}
+	}
+
 	req, err := createHijackHttpRequest(options)
 	if err != nil {
 		return err
@@ -138,4 +143,11 @@ func streamData(rwc io.Writer, br io.Reader, options HijackHttpOptions) error {
 	}()
 	<-exit
 	return <-errs
+}
+
+type logIgnore struct {
+}
+
+func (this *logIgnore) Debugf(msg string, args ...interface{}) {
+	// Ignore the log message
 }
