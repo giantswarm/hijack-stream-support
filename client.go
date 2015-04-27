@@ -17,7 +17,6 @@ import (
 type HijackHttpOptions struct {
 	Method             string
 	Url                string
-	Success            chan struct{}
 	DockerTermProtocol bool
 	InputStream        io.Reader
 	ErrorStream        io.Writer
@@ -78,12 +77,6 @@ func HijackHttpRequest(options HijackHttpOptions) error {
 	clientconn.Do(req)
 
 	// Hijack HTTP connection
-	success := options.Success
-	if success != nil {
-		success <- struct{}{}
-		<-success
-	}
-
 	rwc, br := clientconn.Hijack()
 	defer rwc.Close()
 
