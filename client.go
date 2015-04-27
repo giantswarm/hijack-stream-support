@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"net/http/httputil"
 	neturl "net/url"
+
+	docker "github.com/giantswarm/hijack-stream-support/docker"
 )
 
 type HijackHttpOptions struct {
@@ -21,7 +23,7 @@ type HijackHttpOptions struct {
 	OutputStream       io.Writer
 	Data               interface{}
 	Header             http.Header
-	Log                Logger
+	Log                docker.Logger
 }
 
 // HijackHttpRequest performs an HTTP  request with given method, url and data and hijacks the request (after a successful connection) to stream
@@ -126,7 +128,7 @@ func streamData(rwc io.Writer, br io.Reader, options HijackHttpOptions) error {
 			// When TTY is ON, use regular copy
 			_, err = io.Copy(stdout, br)
 		} else {
-			_, err = StdCopy(stdout, stderr, br, options.Log)
+			_, err = docker.StdCopy(stdout, stderr, br, options.Log)
 		}
 		errs <- err
 	}()
