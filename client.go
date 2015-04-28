@@ -76,7 +76,7 @@ func HijackHttpRequest(options HijackHttpOptions) error {
 
 	// Dial the server
 	var dial net.Conn
-	fmt.Printf("Dialing %s %s\n", protocol, address)
+	//fmt.Printf("Dialing %s %s\n", protocol, address)
 	if protocol == "https" {
 		config := &tls.Config{}
 		dial, err = docker.TLSDial(protocol, address, config)
@@ -130,8 +130,8 @@ func createHijackHttpRequest(options HijackHttpOptions) (*http.Request, error) {
 		}
 	}
 	req.Header.Set("Content-Type", "text/plain")
-	req.Header.Set("Connection", "Upgrade")
-	req.Header.Set("Upgrade", "tcp")
+	//req.Header.Set("Connection", "Upgrade")
+	//req.Header.Set("Upgrade", "tcp")
 	if options.Host != "" {
 		req.Host = options.Host
 	}
