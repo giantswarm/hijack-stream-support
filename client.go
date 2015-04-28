@@ -130,8 +130,8 @@ func createHijackHttpRequest(options HijackHttpOptions) (*http.Request, error) {
 		}
 	}
 	req.Header.Set("Content-Type", "text/plain")
-	//req.Header.Set("Connection", "Upgrade")
-	//req.Header.Set("Upgrade", "tcp")
+	req.Header.Set("Connection", "Upgrade")
+	req.Header.Set("Upgrade", "tcp")
 	if options.Host != "" {
 		req.Host = options.Host
 	}
