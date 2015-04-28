@@ -20,6 +20,7 @@ import (
 type HijackHttpOptions struct {
 	Method             string
 	Url                string
+	Host               string // If set, this will be passed as `Host` header to the request.
 	DockerTermProtocol bool
 	InputStream        io.Reader
 	ErrorStream        io.Writer
@@ -131,6 +132,9 @@ func createHijackHttpRequest(options HijackHttpOptions) (*http.Request, error) {
 	req.Header.Set("Content-Type", "text/plain")
 	req.Header.Set("Connection", "Upgrade")
 	req.Header.Set("Upgrade", "tcp")
+	if options.Host != nil {
+		req.Host = options.Host
+	}
 	return req, nil
 }
 
