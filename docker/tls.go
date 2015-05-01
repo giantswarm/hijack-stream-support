@@ -11,7 +11,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"net"
-	"strings"
 	"time"
 )
 
@@ -59,11 +58,10 @@ func tlsDialWithDialer(dialer *net.Dialer, network, addr string, config *tls.Con
 		return nil, err
 	}
 
-	colonPos := strings.LastIndex(addr, ":")
-	if colonPos == -1 {
-		colonPos = len(addr)
+	hostname, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return nil, err
 	}
-	hostname := addr[:colonPos]
 
 	// If no ServerName is set, infer the ServerName
 	// from the hostname we're connecting to.
