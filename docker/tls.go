@@ -48,6 +48,7 @@ func tlsDialWithDialer(dialer *net.Dialer, network, addr string, config *tls.Con
 
 	if timeout != 0 {
 		errChannel = make(chan error, 2)
+		defer close(errChannel)
 		time.AfterFunc(timeout, func() {
 			errChannel <- errors.New("")
 		})
