@@ -28,7 +28,7 @@ type HijackHttpOptions struct {
 	Data               interface{}
 	Header             http.Header
 	Log                docker.Logger
-	ErrorHandler       func(res *http.Response) error
+	ErrorHandler       func(res *http.Response, err error) error
 }
 
 var (
@@ -98,11 +98,15 @@ func HijackHttpRequest(options HijackHttpOptions) error {
 	defer clientconn.Close()
 
 	res, err := clientconn.Do(req)
-	if res.StatusCode >= http.StatusBadRequest {
-		if err := options.ErrorHandler(res); err != nil {
-			return err
+	if res.StatusCode > 299 || err != nil {
+		if options.ErrorHandler != nil {
+			if err := options.ErrorHandler(res, err); err != nil {
+				return err
+			}
+			return nil
 		}
-		return nil
+
+		return err
 	}
 
 	// Hijack HTTP connection
